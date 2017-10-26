@@ -4,7 +4,6 @@ const axios = require('axios');
 
 const getBeers = function() {
   const beerIds = Array.from({length: 5}, () => Math.floor(Math.random() * 234) + 1).join('|');
-  console.log(beerIds);
   return axios.get(`https://api.punkapi.com/v2/beers?ids=${beerIds}`)
   .then(response => {
     return response.data;
@@ -15,16 +14,14 @@ const getBeers = function() {
 };
 
 const createBeerName = function(data) {
-  var originalNames = Array.from(data, v => v.name).toString();
-  console.log(originalNames);
-  var words = Array.from(new Set(originalNames))
-  console.log(words);
+  const originalNames = Array.from(data, v => v.name).toString();
+  let words = originalNames.replace(/,/g, ' ').replace(/-/g, '').replace(/\((.*?)\)/g, '');
+  words = words.split(' ').filter(v => v !== '');
 
-  var beerName;
+  let beerName = '';
 
-  for(var i = 0; i < 3; i++) {
-    var x = Math.floor(Math.random() * words.length);
-    console.log(x);
+  for(let i = 0; i < 3; i++) {
+    let x = Math.floor(Math.random() * words.length);
     beerName += `${words[x]} `;
   }
 
@@ -38,5 +35,5 @@ const createBeerDescription = function() {
 
 getBeers().then((data) => {
   console.log(`Name: ${createBeerName(data)}`);
-  console.log(createBeerDescription());
+  console.log(`Description: ${createBeerDescription()}`);
 });
