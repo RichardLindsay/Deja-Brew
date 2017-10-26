@@ -70,17 +70,42 @@ const getYeast = function(data) {
   return yeast;
 };
 
+const getPh = function(data) {
+  let Phs = Array.from(data, v => v.ph);
+  Phs = shuffleArray(Phs);
+  let Ph = Phs[0];
+  return Ph;
+};
+
+const getMash = function(data) {
+  let mashes = Array.from(data, v => v.method.mash_temp);
+  console.log(mashes);
+  mashes = shuffleArray(mashes);
+  let mash = mashes[0];
+  console.log(mash);
+  return mash;
+};
+
+const getBoilAndBatchVolumes = function(data) {
+  let volumes = Array.from(data, v => v.volume);
+  let boilVolumes = Array.from(data, v => v.boil_volume);
+  volumes = shuffleArray(volumes);
+  boilVolumes = shuffleArray(boilVolumes);
+  let volume = volumes[0];
+  let boilVolume = boilVolumes[0];
+
+  return [volume, boilVolume];
+};
+
 getBeers().then((response) => {
   console.log(`Requests left: ${getRateLimit(response.headers)}`);
-
-  console.log(getMalt(response.data, 2));
 
   // Create recipe
   let r = new brauhaus.Recipe({
     name: createBeerName(response.data),
     description: '🤷‍',
-    batchSize: 20.0,
-    boilSize: 10.0
+    batchSize: getBoilAndBatchVolumes(response.data)[0].value,
+    boilSize: getBoilAndBatchVolumes(response.data)[1].value
   });
 
   // Add malts
@@ -89,10 +114,14 @@ getBeers().then((response) => {
     weight: getMalt(response.data, 0).amount.value
   });
 
-  r.add('fermentable', {
-    name: getMalt(response.data, 1).name,
-    weight: getMalt(response.data, 1).amount.value
-  });
+  let secondaryMalt = getMalt(response.data, 1);
+
+  if (typeof secondaryMalt !== 'undefined') {
+    r.add('fermentable', {
+      name: getMalt(response.data, 1).name,
+      weight: getMalt(response.data, 1).amount.value
+    });
+  }
 
   let tertiaryMalt = getMalt(response.data, 2);
 
@@ -131,6 +160,21 @@ getBeers().then((response) => {
     name: getYeast(response.data)
   });
 
-  console.log(r);
+  r.mash = new brauhaus.Mash({
+    name: 'The mash',
+    ph: getPh(response.data)
+  });
+
+  // console.log(getMash(response.data));
+
+  r.mash.addStep({
+      name: 'Saccharification',
+      type: 'Infusion',
+      time: 60,
+      temp: getMash(response.data).temp[0].value,
+      waterRatio: 2.5
+  });
+
+  console.log(r.mash.steps);
 
 });
