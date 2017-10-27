@@ -28,7 +28,7 @@ const getBeers = function() {
 };
 
 const getRateLimit = function(data) {
-  return data["x-ratelimit-remaining"];
+  return data['x-ratelimit-remaining'];
 };
 
 const createBeerName = function(data) {
@@ -79,10 +79,10 @@ const getPh = function(data) {
 
 const getMash = function(data) {
   let mashes = Array.from(data, v => v.method.mash_temp);
-  console.log(mashes);
+  // console.log(mashes);
   mashes = shuffleArray(mashes);
   let mash = mashes[0];
-  console.log(mash);
+  // console.log(mash);
   return mash;
 };
 
@@ -139,11 +139,15 @@ getBeers().then((response) => {
     time: 60
   });
 
-  r.add('hop', {
-    name: getHop(response.data, 1).name,
-    weight: getHop(response.data, 1).amount.value,
-    time: 30
-  });
+  let secondaryHop = getHop(response.data, 1);
+
+  if (typeof secondaryHop !== 'undefined') {
+    r.add('hop', {
+      name: secondaryHop.name,
+      weight: secondaryHop.amount.value,
+      time: 15
+    });
+  }
 
   let tertiaryHop = getHop(response.data, 2);
 
@@ -165,16 +169,26 @@ getBeers().then((response) => {
     ph: getPh(response.data)
   });
 
-  // console.log(getMash(response.data));
-
   r.mash.addStep({
       name: 'Saccharification',
       type: 'Infusion',
       time: 60,
-      temp: getMash(response.data).temp[0].value,
+      temp: getMash(response.data)[0].temp.value,
       waterRatio: 2.5
   });
 
-  console.log(r.mash.steps);
+  console.log(r)
+  r.calculate();
+
+  console.log(' ');
+  console.log('Original Gravity: ' + r.og.toFixed(3));
+  console.log('Final Gravity: ' + r.fg.toFixed(3));
+  console.log('Color: ' + r.color.toFixed(1) + '° SRM (' + r.colorName() + ')');
+  console.log('IBU: ' + r.ibu.toFixed(1));
+  console.log('Alcohol: ' + r.abv.toFixed(1) + '%');
+  console.log('Calories: ' + Math.round(r.calories) + ' kcal');
+
+
+
 
 });
